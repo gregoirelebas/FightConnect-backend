@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+const organizationSchema = mongoose.Schema({
+    name: String,
+    date: Date,
+});
+
 const promoterSchema = mongoose.Schema({
     userId: {type: mongoose.Schema.Types.ObjectId, ref:'users'},
     sport: String,
@@ -9,10 +14,6 @@ const promoterSchema = mongoose.Schema({
     
 });
 
-const organizationSchema = mongoose.Schema({
-    name: String,
-    date: Date,
-});
 
 const Promoter = mongoose.model('promoters', promoterSchema);
 

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const fighterModel = mongoose.model({
-  userID: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+const fighterSchema = mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
   level: { type: String, enum: ['amateur', 'pro'] },
   licenceNuber: String,
   weight: Number,
@@ -12,4 +12,6 @@ const fighterModel = mongoose.model({
   lastFightDate: Date,
 });
 
-module.exports = mongoose.Schema('fighters', fighterModel);
+const Fighter = mongoose.model('fighters', fighterSchema);
+
+module.exports = Fighter;
