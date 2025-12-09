@@ -1,90 +1,121 @@
 var express = require('express');
 var router = express.Router();
-require('../models/connection');
 
+const uid2 = require('uid2');
 const { checkBody } = require('../modules/checkBody');
 const bcrypt = require('bcrypt');
 
-router.post('/signup/fighter', (req, res) => {
+
+
+
+router.post('/signup/fighter', async (req, res) => {
   if (!checkBody(req.body,
-    ['username', 'email', 'password', 'phone_number', 'bio', 'profile_picture', 'role', 'level', 'licence_number',
-      'weight', 'height', 'victory_count', 'defeat_count', 'draw_count', 'last_fight_date'])) {
+    ['username', 'email', 'password', 'phoneNumber', 'bio', 'profilePicture', 'role', 'level', 'licenceNumber',
+      'weight', 'height', 'victoryCount', 'defeatCount', 'drawCount', 'lastFightDate'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
     return;
   }
 
-  User.findOne({ username: req.body.username }).then(data => {
-    if (data === null) {
-      const newUser = new User({
-        username: req.body.username,
-        email: req.body.email,
-        password: bcrypt.hashSync(req.body.password, 10),
-        phone_number: req.body.phone_number,
-        bio: req.body.bio,
-        profile_picture: req.body.profile_picture,
-        role: req.body.role,
-        level: req.body.level,
-        licence_number: req.body.licence_number,
-        weight: req.body.weight,
-        height: req.body.height,
-        victory_count: req.body.victory_count,
-        defeat_count: req.body.defeat_count,
-        draw_count: req.body.draw_count,
-        last_fight_date: req.body.last_fight_date,
-      });
+  const { username, email, password, phoneNumber, bio, profilePicture, role, level, licenceNumber, weight, height, victoryCount, defeatCount, drawCount, lastFightDate } = req.body;
 
-      newUser.save().then(() => {
-        res.json({ result: true });
-      });
-    } else {
-      res.json({ result: false, error: 'User already exists' });
-    }
+  const found = User.findOne({ username: username });
+  if (found) {
+    return res.status(400).json({ result: false, error: "User already exist" });
+  }
 
+  const newUser = new User({
+    id: uid2(32),
+    username: username,
+    email: email,
+    password: bcrypt.hashSync(password, 10),
+    phoneNumber: phoneNumber,
+    bio: bio,
+    profilePicture: profilePicture,
+    role: role
   });
+
+  await newUser.save();
+
+  const data = await User.findOne({ username: username });
+
+  const newFighter = new Fighter({
+    id: uid2(32),
+    user_id: data.id,
+    level: level,
+    licenceNumber: licenceNumber,
+    weight: weight,
+    height: height,
+    victoryCount: victoryCount,
+    defeatCount: defeatCount,
+    drawCount: drawCount,
+    lastFightDate: lastFightDate,
+  });
+
+  await newFighter.save();
 
 });
 
-router.post('/signup/promoter', (req, res) => {
+
+
+
+router.post('/signup/promoter', async (req, res) => {
   if (!checkBody(req.body,
-    ['username', 'email', 'password', 'phone_number', 'bio', 'profile_picture', 'role', 'siret', 'organisation'])) {
+    ['username', 'email', 'password', 'phoneNumber', 'bio', 'profilePicture', 'role', 'siret', 'name', 'date'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
     return;
   }
 
-  User.findOne({ username: req.body.username }).then(data => {
-    if (data === null) {
-      const newUser = new User({
-        username: req.body.username,
-        email: req.body.email,
-        password: bcrypt.hashSync(req.body.password, 10),
-        phone_number: req.body.phone_number,
-        bio: req.body.bio,
-        profile_picture: req.body.profile_picture,
-        role: req.body.role,
-        siret: req.body.siret,
-        organisation: req.body.organisation,
-      });
+  const { username, email, password, phoneNumber, bio, profilePicture, role, siret, name, date } = req.body;
 
-      newUser.save().then(() => {
-        res.json({ result: true });
-      });
-    } else {
-      res.json({ result: false, error: 'User already exists' });
-    }
+  const found = User.findOne({ username: req.body.username })
 
+  if (found) {
+    return res.status(400).json({ result: false, error: "User already exist" });
+  }
+
+  const newUser = new User({
+    id: uid2(32),
+    username: username,
+    email: email,
+    password: bcrypt.hashSync(password, 10),
+    phoneNumber: phoneNumber,
+    bio: bio,
+    profilePicture: profilePicture,
+    role: role
   });
 
+  await newUser.save()
+
+  const data = await User.findOne({ username: req.body.username })
+
+  const newPromoter = new Promoter({
+    id: uid2(32),
+    user_id: data.id,
+    siret: siret,
+    organisation: [{
+      name: name,
+      date: date
+    }]
+  })
 });
 
-  router.post('/signin', (req, res) => {
-  if (!checkBody(req.body, ['username','password'])) {
+newPromoter.save().then(() => {
+  res.json({ result: true });
+});
+
+
+
+
+
+router.post('/signin', (req, res) => {
+  if (!checkBody(req.body, ['username', 'password'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
     return;
   }
-   User.findOne({ username: req.body.username}).then(data => {
+  User.findOne({ username: req.body.username }).then(data => {
 
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({result:true});
+      res.json({ result: true });
     } else {
       res.json({ result: false, error: 'User not found' });
     }
