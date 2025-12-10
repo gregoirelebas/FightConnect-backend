@@ -112,14 +112,15 @@ router.post('/signup/promoter', async (req, res) => {
 
 
 router.post('/signin', (req, res) => {
-  if (!checkBody(req.body, ['username', 'password'])) {
+  console.log(req.body)
+  if (!checkBody(req.body, ['name', 'password'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
     return;
   }
   User.findOne({ name: req.body.name }).then(data => {
 
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true });
+      res.json({ result: true, user : data });
     } else {
       res.json({ result: false, error: 'User not found' });
     }
