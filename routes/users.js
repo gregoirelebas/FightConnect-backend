@@ -2,27 +2,63 @@ var express = require('express');
 var router = express.Router();
 
 const uid2 = require('uid2');
-const { checkBody } = require('../modules/checkBody');
 const bcrypt = require('bcrypt');
 
 const User = require('../models/users');
 const Fighter = require('../models/fighters');
 const Promoter = require('../models/promoter');
 
+const { checkBody } = require('../modules/checkBody');
+const { varToString } = require('../modules/varToString');
 
 router.post('/signup/fighter', async (req, res) => {
-  if (!checkBody(req.body,
-    ['username', 'email', 'password', 'phoneNumber', 'bio', 'profilePicture', 'role', 'level', 'licenceNumber',
-      'weight', 'height', 'victoryCount', 'defeatCount', 'drawCount', 'lastFightDate'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
-    return;
+  const {
+    name,
+    email,
+    password,
+    phoneNumber,
+    bio,
+    profilePicture,
+    role,
+    sports,
+    level,
+    licenceNumber,
+    weight,
+    height,
+    victoryCount,
+    defeatCount,
+    drawCount,
+    lastFightDate,
+  } = req.body;
+
+  const check = checkBody(req.body, [
+    varToString({ name }),
+    varToString({ email }),
+    varToString({ password }),
+    varToString({ phoneNumber }),
+    varToString({ bio }),
+    varToString({ profilePicture }),
+    varToString({ role }),
+    varToString({ sports }),
+    varToString({ level }),
+    varToString({ licenceNumber }),
+    varToString({ weight }),
+    varToString({ height }),
+    varToString({ victoryCount }),
+    varToString({ defeatCount }),
+    varToString({ drawCount }),
+    varToString({ lastFightDate }),
+  ]);
+
+  if (!check.isValid) {
+    return res
+      .status(400)
+      .json({ result: false, error: 'Missing fields => ' + check.missingFields });
   }
 
-  const { name, email, password, phoneNumber, bio, profilePicture, role, sports, level, licenceNumber, weight, height, victoryCount, defeatCount, drawCount, lastFightDate } = req.body;
-
-  const found = User.findOne({ name: name });
+  const found = await User.findOne({ name: name });
   if (found) {
-    return res.status(400).json({ result: false, error: "User already exist" });
+    return res.status(400).json({ result: false, error: 'User already exist' });
   }
 
   const newUser = new User({
@@ -34,16 +70,16 @@ router.post('/signup/fighter', async (req, res) => {
     bio: bio,
     profilePicture: profilePicture,
     role: role,
-    sports: sports
+    sports: sports,
   });
 
   await newUser.save();
 
-  const data = await User.findOne({ name: name });
+  const userID = (await User.findOne({ id: newUser.id }))._id;
 
   const newFighter = new Fighter({
     id: uid2(32),
-    userId: data.id,
+    userId: userID,
     level: level,
     licenceNumber: licenceNumber,
     weight: weight,
@@ -57,26 +93,45 @@ router.post('/signup/fighter', async (req, res) => {
   await newFighter.save();
 
   return res.json({ result: true });
-
-
 });
 
-
-
-
 router.post('/signup/promoter', async (req, res) => {
-  if (!checkBody(req.body,
-    ['username', 'email', 'password', 'phoneNumber', 'bio', 'profilePicture', 'role', 'siret', 'name', 'date'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
-    return;
+  const {
+    name,
+    email,
+    password,
+    phoneNumber,
+    bio,
+    profilePicture,
+    role,
+    sports,
+    siret,
+    organizations,
+  } = req.body;
+
+  const check = checkBody(req.body, [
+    varToString({ name }),
+    varToString({ email }),
+    varToString({ password }),
+    varToString({ phoneNumber }),
+    varToString({ bio }),
+    varToString({ profilePicture }),
+    varToString({ role }),
+    varToString({ sports }),
+    varToString({ siret }),
+    varToString({ organizations }),
+  ]);
+
+  if (!check.isValid) {
+    return res
+      .status(400)
+      .json({ result: false, error: 'Missing fields => ' + check.missingFields });
   }
 
-  const { name, email, password, phoneNumber, bio, profilePicture, role, sports, siret, organizations } = req.body;
-
-  const found = User.findOne({ name: req.body.name })
+  const found = User.findOne({ name: req.body.name });
 
   if (found) {
-    return res.status(400).json({ result: false, error: "User already exist" });
+    return res.status(400).json({ result: false, error: 'User already exist' });
   }
 
   const newUser = new User({
@@ -88,45 +143,40 @@ router.post('/signup/promoter', async (req, res) => {
     bio: bio,
     profilePicture: profilePicture,
     role: role,
-    sports: sports
+    sports: sports,
   });
 
-  await newUser.save()
+  await newUser.save();
 
-  const data = await User.findOne({ name: name })
+  const userID = (await User.findOne({ id: newUser.id }))._id;
 
   const newPromoter = new Promoter({
     userId: data.id,
     siret: siret,
-    organizations: organizations
-  })
+    organizations: organizations,
+  });
 
   await newPromoter.save();
 
   return res.json({ result: true });
-
-
 });
 
+router.post('/signin', async (req, res) => {
+  const { name, password } = req.body;
 
-
-
-router.post('/signin', (req, res) => {
-  console.log(req.body)
-  if (!checkBody(req.body, ['name', 'password'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
-    return;
+  const check = checkBody(req.body, [varToString({ name }), varToString({ password })]);
+  if (!check.isValid) {
+    return res
+      .status(400)
+      .json({ result: false, error: 'Missing fields => ' + check.missingFields });
   }
-  User.findOne({ name: req.body.name }).then(data => {
 
-    if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, user : data });
-    } else {
-      res.json({ result: false, error: 'User not found' });
-    }
-  });
+  const user = await User.findOne({ name: req.body.name });
+  if (user && bcrypt.compareSync(password, user.password)) {
+    res.json({ result: true });
+  } else {
+    res.json({ result: false, error: 'User not found' });
+  }
 });
-
-
 
 module.exports = router;
