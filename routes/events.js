@@ -9,15 +9,14 @@ const { checkBody } = require('../modules/checkBody');
 
 router.post('/create', async (req, res) => {
     if (!checkBody(req.body,
-        ['level', 'sports', 'clubName', 'date', 'experience', 'weight', 'minWeight', 'maxWeight', 'name', 'description',
+        ['level', 'sports', 'clubName', 'date', 'experience', 'weight', 'name', 'description',
             'PromoterId'])) {
         res.json({ result: false, error: 'Missing or empty fields' });
         return;
     }
 
-    const { level, sports, clubName, date, experience, weight, minWeight, maxWeight, name, description,
+    const { level, sports, clubName, date, experience, weight, name, description,
         PromoterId, } = req.body;
-
 
 
     const newEvent = new Event({
@@ -27,8 +26,6 @@ router.post('/create', async (req, res) => {
         date: new Date(date),
         experience: experience,
         weight: weight,
-        minWeight: minWeight,
-        maxWeight: maxWeight,
         name: name,
         description: description,
         PromoterId: PromoterId,
@@ -42,7 +39,6 @@ router.post('/create', async (req, res) => {
 });
 
 router.get("/search", async (req, res) => {
-
 
   try {
     const data = await Event.find(req.query);

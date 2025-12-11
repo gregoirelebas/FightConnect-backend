@@ -14,7 +14,7 @@ const eventSchema = mongoose.Schema({
     clubName: String,
     date: Date,
     experience: { type: [String], enum: ['0', "1-3", '4-6', '7-9', '10-12', '13-15', '16-18', '19-21', '22-25', '25+'] },
-    weight: Number,
+    weight: { type: [String], enum: ['52-57', "57-61", '61-66', '66-70', '70-77', '77-84', '84-93', '93-120'] },
     name: String,
     description: String,
     PromoterId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
