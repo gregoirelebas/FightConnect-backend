@@ -94,11 +94,16 @@ router.get('/promoter/:token', async (req, res) => {
     if (!token) {
       return res.status(400).json({ result: false, error: 'Missing token' });
     }
+});
 
     const promoter = await User.findOne({ token: token });
     if (!promoter) {
       return res.status(400).json({ result: false, error: 'Promoter not found' });
     }
+});
+router.put('/acceptFighter', async (req, res) => {
+    try {
+        const { fighterId, eventId } = req.body;
 
     const data = await Event.find({ promoterId: promoter._id });
 
