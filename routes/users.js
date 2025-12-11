@@ -199,4 +199,38 @@ router.post('/signin', async (req, res) => {
   }
 });
 
+router.get('/profile/:username', async (req, res) => {
+  const username = req.params.username; 
+  res.json({ profile: username });
+});
+
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ result: false, error: 'User not found' });
+    }
+    
+    if (user.role === 'fighter') {
+      await Fighter.deleteOne({ userId: user._id });
+    } else if (user.role === 'promoter') {
+      await Promoter.deleteOne({ userId: user._id });
+    }
+    
+    await User.findByIdAndDelete(userId);
+    
+    res.json({ result: true, message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ result: false, error: 'Server error' });
+  }
+});
+
+
+
+
+
 module.exports = router;
