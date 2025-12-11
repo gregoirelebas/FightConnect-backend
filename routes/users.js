@@ -128,7 +128,8 @@ router.post('/signup/promoter', async (req, res) => {
       .json({ result: false, error: 'Missing fields => ' + check.missingFields });
   }
 
-  const found = User.findOne({ name: req.body.name });
+  const found = await User.findOne({ name: req.body.name });
+
 
   if (found) {
     return res.status(400).json({ result: false, error: 'User already exist' });
@@ -151,7 +152,7 @@ router.post('/signup/promoter', async (req, res) => {
   const userID = (await User.findOne({ id: newUser.id }))._id;
 
   const newPromoter = new Promoter({
-    userId: data.id,
+    userId: userID,
     siret: siret,
     organizations: organizations,
   });
