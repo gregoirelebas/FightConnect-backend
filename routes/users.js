@@ -11,6 +11,18 @@ const Promoter = require('../models/promoter');
 const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
 
+router.get('/checkUsername/:username', async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) {
+    return res.status(400).json({ result: false, error: "Username can't be empty" });
+  }
+
+  const found = await User.findOne({ name: username });
+
+  return res.json({ result: found === null });
+});
+
 router.post('/signup/fighter', async (req, res) => {
   const {
     name,
