@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 
 const User = require('../models/users');
 const Fighter = require('../models/fighters');
-const Promoter = require('../models/promoter');
+const Promoter = require('../models/promoters');
 
 const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
@@ -70,11 +70,13 @@ router.post('/signup/fighter', async (req, res) => {
 
   const found = await User.findOne({ name: name });
   if (found) {
-    return res.status(400).json({ result: false, error: 'User already exist' });
+    return res.status(400).json({ result: false, error: 'Username is already used' });
   }
 
+  const token = uid2(32);
+
   const newUser = new User({
-    id: uid2(32),
+    token: token,
     name: name,
     email: email,
     password: bcrypt.hashSync(password, 10),
@@ -87,10 +89,9 @@ router.post('/signup/fighter', async (req, res) => {
 
   await newUser.save();
 
-  const userID = (await User.findOne({ id: newUser.id }))._id;
+  const userID = (await User.findOne({ token: token }))._id;
 
   const newFighter = new Fighter({
-    id: uid2(32),
     userId: userID,
     level: level,
     licenceNumber: licenceNumber,
@@ -104,7 +105,7 @@ router.post('/signup/fighter', async (req, res) => {
 
   await newFighter.save();
 
-  return res.json({ result: true });
+  return res.json({ result: true, token: token });
 });
 
 router.post('/signup/promoter', async (req, res) => {
@@ -142,13 +143,14 @@ router.post('/signup/promoter', async (req, res) => {
 
   const found = await User.findOne({ name: req.body.name });
 
-
   if (found) {
-    return res.status(400).json({ result: false, error: 'User already exist' });
+    return res.status(400).json({ result: false, error: 'Username is already used' });
   }
 
+  const token = uid2(32);
+
   const newUser = new User({
-    id: uid2(32),
+    token: token,
     name: name,
     email: email,
     password: bcrypt.hashSync(password, 10),
@@ -161,7 +163,7 @@ router.post('/signup/promoter', async (req, res) => {
 
   await newUser.save();
 
-  const userID = (await User.findOne({ id: newUser.id }))._id;
+  const userID = (await User.findOne({ token: token }))._id;
 
   const newPromoter = new Promoter({
     userId: userID,
@@ -171,7 +173,7 @@ router.post('/signup/promoter', async (req, res) => {
 
   await newPromoter.save();
 
-  return res.json({ result: true });
+  return res.json({ result: true, token: token });
 });
 
 router.post('/signin', async (req, res) => {
@@ -185,10 +187,15 @@ router.post('/signin', async (req, res) => {
   }
 
   const user = await User.findOne({ name: req.body.name });
+
+  if (!user) {
+    return res.json({ result: false, error: 'User not found' });
+  }
+
   if (user && bcrypt.compareSync(password, user.password)) {
-    res.json({ result: true });
+    res.json({ result: true, token: user.token });
   } else {
-    res.json({ result: false, error: 'User not found' });
+    res.json({ result: false, error: 'Invalid password' });
   }
 });
 

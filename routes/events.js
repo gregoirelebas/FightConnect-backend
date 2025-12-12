@@ -1,103 +1,136 @@
 const express = require('express');
 const router = express.Router();
-const Event = require('../models/events');
-const User = require('../models/users');
 
+const uid2 = require('uid2');
+
+const User = require('../models/users');
+const Event = require('../models/events');
 
 const { checkBody } = require('../modules/checkBody');
-
+const { varToString } = require('../modules/varToString');
 
 router.post('/create', async (req, res) => {
-    if (!checkBody(req.body,
-        ['level', 'sports', 'clubName', 'date', 'experience', 'weight', 'name', 'description',
-            'PromoterId'])) {
-        res.json({ result: false, error: 'Missing or empty fields' });
-        return;
-    }
+  const { level, sport, clubName, date, experience, weight, name, description, promoterToken } =
+    req.body;
 
-    const { level, sports, clubName, date, experience, weight, name, description,
-        PromoterId, } = req.body;
+  const check = checkBody(req.body, [
+    varToString({ level }),
+    varToString({ sport }),
+    varToString({ clubName }),
+    varToString({ date }),
+    varToString({ experience }),
+    varToString({ weight }),
+    varToString({ name }),
+    varToString({ description }),
+    varToString({ promoterToken }),
+  ]);
 
+  if (!check.isValid) {
+    return res
+      .status(400)
+      .json({ result: false, error: 'Missing fields => ' + check.missingFields });
+  }
 
-    const newEvent = new Event({
-        level: level,
-        sports: sports,
-        clubName: clubName,
-        date: new Date(date),
-        experience: experience,
-        weight: weight,
-        name: name,
-        description: description,
-        PromoterId: PromoterId,
-        fighters: [],
-    });
+  const promoter = await User.findOne({ token: promoterToken });
+  if (!promoter) {
+    return res.status(400).json({ result: false, error: 'Promoter not found' });
+  }
 
-    await newEvent.save();
+  const eventToken = uid2(32);
 
-    res.send("ok");
+  const newEvent = new Event({
+    token: eventToken,
+    level: level,
+    sport: sport,
+    clubName: clubName,
+    date: new Date(date),
+    experience: experience,
+    weight: weight,
+    name: name,
+    description: description,
+    promoterId: promoter._id,
+    fighters: [],
+  });
 
+  await newEvent.save();
+
+  res.json({ result: true, token: eventToken });
 });
 
-router.get("/search", async (req, res) => {
-
+router.get('/search', async (req, res) => {
   try {
     const data = await Event.find(req.query);
 
-    if (data.length > 0) {
-      res.json({ result: true, event: data });
-    } else {
-      res.json({ result: false, error: "No event found" });
-    }
+    res.json({ result: true, data: data });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get('/:token', async (req, res) => {
   try {
-    const { id } = req.params;
+    const { token } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ result: false, error: "Missing id parameter" });
+    if (!token) {
+      return res.status(400).json({ result: false, error: 'Missing token' });
     }
 
-    const event = await Event.findById(id);
+    const data = await Event.findOne({ token: token });
 
-    if (!event) {
-      return res.status(404).json({ result: false, error: "Event not found" });
+    if (!data) {
+      return res.status(400).json({ result: false, error: 'No event found' });
     }
 
-    res.json({ result: true, event });
+    res.json({ result: true, data: data });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
   }
 });
 
-
-
-router.get("/user/:id", async (req, res) => {
+router.get('/promoter/:token', async (req, res) => {
   try {
-    console.log(req.params)
-    const  PromoterId  = req.params.id;
+    const token = req.params.token;
 
-    if (!PromoterId) {
-      return res.status(400).json({ result: false, error: "Missing id parameter" });
+    if (!token) {
+      return res.status(400).json({ result: false, error: 'Missing token' });
     }
 
-    const event = await Event.find({PromoterId});
-
-    if (!event) {
-      return res.status(404).json({ result: false, error: "User not found" });
+    const promoter = await User.findOne({ token: token });
+    if (!promoter) {
+      return res.status(400).json({ result: false, error: 'Promoter not found' });
     }
 
-    res.json({ result: true, event });
+    const data = await Event.find({ promoterId: promoter._id });
+
+    if (!data) {
+      return res.status(404).json({ result: false, error: 'Event not found' });
+    }
+
+    res.json({ result: true, data: data });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
   }
 });
 
+router.get('/fighter/:token', async (req, res) => {
+  try {
+    const token = req.params.token;
 
+    if (!token) {
+      return res.status(400).json({ result: false, error: 'Missing token' });
+    }
 
+    const fighter = await User.findOne({ token: token });
+    if (!fighter) {
+      return res.status(400).json({ result: false, error: 'Fighter not found' });
+    }
 
+    const data = await Event.find({ 'fighters.fighterId': fighter._id });
+
+    res.json({ result: true, data: data });
+  } catch (error) {
+    res.status(500).json({ result: false, error: error.message });
+  }
+});
 
 module.exports = router;
