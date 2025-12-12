@@ -193,7 +193,7 @@ router.post('/signin', async (req, res) => {
   }
 
   if (user && bcrypt.compareSync(password, user.password)) {
-    res.json({ result: true, token: user.token });
+    res.json({ result: true, token: user.token, role: user.role });
   } else {
     res.json({ result: false, error: 'Invalid password' });
   }
