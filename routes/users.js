@@ -10,7 +10,6 @@ const Promoter = require('../models/promoters');
 
 const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
-const { error } = require('console');
 
 router.get('/checkUsername/:username', async (req, res) => {
   const { username } = req.params;
@@ -200,11 +199,6 @@ router.post('/signin', async (req, res) => {
   }
 });
 
-router.get('/profile/:username', async (req, res) => {
-  const username = req.params.username;
-  res.json({ profile: username });
-});
-
 router.delete('/:token', async (req, res) => {
   try {
     const token = req.params.token;
@@ -229,18 +223,7 @@ router.delete('/:token', async (req, res) => {
   }
 });
 
-router.get('/:token', async (req, res) => {
-  const token = req.params.token;
-
-  if (!token) {
-    return res.status(400).json({ result: false, error: 'Missing token' });
-  }
-
-  const user = await User.findOne({ token: token });
-  if (!user) {
-    return res.status(400).json({ result: false, error: 'User not found' });
-  }
-
+async function getUserByRole(user, res) {
   if (user.role === 'fighter') {
     const fighter = await Fighter.findOne({ userId: user._id }).populate('userId');
     if (!fighter) {
@@ -259,6 +242,36 @@ router.get('/:token', async (req, res) => {
   } else {
     return res.json({ result: false, error: 'User role not handled: ' + user.role });
   }
+}
+
+router.get('/me/:token', async (req, res) => {
+  const token = req.params.token;
+
+  if (!token) {
+    return res.status(400).json({ result: false, error: 'Missing token' });
+  }
+
+  const user = await User.findOne({ token: token });
+  if (!user) {
+    return res.status(400).json({ result: false, error: 'User not found' });
+  }
+
+  return getUserByRole(user, res);
+});
+
+router.get('/profile/:username', async (req, res) => {
+  const username = req.params.username;
+
+  if (!username) {
+    return res.status(400).json({ result: false, error: 'Missing username' });
+  }
+
+  const user = await User.findOne({ name: username });
+  if (!user) {
+    return res.status(400).json({ result: false, error: 'User not found' });
+  }
+
+  return getUserByRole(user, res);
 });
 
 module.exports = router;
