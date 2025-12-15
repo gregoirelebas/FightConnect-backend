@@ -10,6 +10,7 @@ const Promoter = require('../models/promoters');
 
 const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
+const { error } = require('console');
 
 router.get('/checkUsername/:username', async (req, res) => {
   const { username } = req.params;
@@ -200,37 +201,64 @@ router.post('/signin', async (req, res) => {
 });
 
 router.get('/profile/:username', async (req, res) => {
-  const username = req.params.username; 
+  const username = req.params.username;
   res.json({ profile: username });
 });
 
-
-router.delete('/:id', async (req, res) => {
+router.delete('/:token', async (req, res) => {
   try {
-    const userId = req.params.id;
-    
-    const user = await User.findById(userId);
-    
+    const token = req.params.token;
+
+    const user = await User.findOne({ token: token });
+
     if (!user) {
-      return res.status(404).json({ result: false, error: 'User not found' });
+      return res.status(400).json({ result: false, error: 'User not found' });
     }
-    
+
     if (user.role === 'fighter') {
       await Fighter.deleteOne({ userId: user._id });
     } else if (user.role === 'promoter') {
       await Promoter.deleteOne({ userId: user._id });
     }
-    
-    await User.findByIdAndDelete(userId);
-    
+
+    await User.findByIdAndDelete(user._id);
+
     res.json({ result: true, message: 'User deleted successfully' });
   } catch (error) {
-    res.status(500).json({ result: false, error: 'Server error' });
+    res.status(500).json({ result: false, error: error });
   }
 });
 
+router.get('/:token', async (req, res) => {
+  const token = req.params.token;
 
+  if (!token) {
+    return res.status(400).json({ result: false, error: 'Missing token' });
+  }
 
+  const user = await User.findOne({ token: token });
+  if (!user) {
+    return res.status(400).json({ result: false, error: 'User not found' });
+  }
 
+  if (user.role === 'fighter') {
+    const fighter = await Fighter.findOne({ userId: user._id }).populate('userId');
+    if (!fighter) {
+      return res.status(400).json({ result: false, error: 'Fighter not found' });
+    }
+
+    return res.json({ result: true, data: fighter });
+  } else if (user.role === 'promoter') {
+    const promoter = await Promoter.findOne({ userId: user._id }).populate('userId');
+
+    if (!promoter) {
+      return res.status(400).json({ result: false, error: 'Promoter not found' });
+    }
+
+    return res.json({ result: true, data: promoter });
+  } else {
+    return res.json({ result: false, error: 'User role not handled: ' + user.role });
+  }
+});
 
 module.exports = router;
