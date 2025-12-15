@@ -100,7 +100,9 @@ router.get('/promoter/:token', async (req, res) => {
       return res.status(400).json({ result: false, error: 'Promoter not found' });
     }
 
-    return res.json({ result: true, data: promoter });
+    const events = await Event.find({ promoterId: promoter._id });
+
+    return res.json({ result: true, data: events });
   } catch (e) {
     return res.status(500).json({ result: false, error: e });
   }
