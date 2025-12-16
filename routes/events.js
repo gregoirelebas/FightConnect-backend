@@ -221,9 +221,9 @@ router.get('/fighter/:token', async (req, res) => {
   }
 });
 
-router.get('/reservation', async (req, res) => {
-  try {
-    const { fighterToken, eventToken } = req.params;
+router.get('/reservation/:fighterToken/:eventToken', async (req, res) => {
+    try {
+        const { fighterToken, eventToken } = req.params;
 
     const event = await Event.findOne({ token: eventToken });
     if (!event) {
@@ -235,10 +235,12 @@ router.get('/reservation', async (req, res) => {
       return res.status(404).json({ result: false, error: 'Fighter not found' });
     }
 
-    const reservation = event.fighters.find((r) => r.fighterId.equals(fighter._id));
-    if (!reservation) {
-      return res.status(404).json({ result: false, error: 'Reservation not found' });
-    }
+        const reservation = event.fighters.find(r => r.fighterId.equals(fighter._id));
+        if (!reservation) {
+            return res.json({ result: true, status: '' });
+        }
+
+        return res.json({result: true, status: reservation.status});
 
     res.json({ result: true, reservation });
   } catch (error) {
