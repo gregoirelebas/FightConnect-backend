@@ -109,17 +109,27 @@ router.get('/promoter/:token', async (req, res) => {
     }
 });
 
-router.put('/acceptFighter', async (req, res) => {
+router.put('/decision', async (req, res) => {
     try {
-        const { fighterId, eventId } = req.body;
+        const { fighterToken, eventToken, applicationStatus } = req.body;
 
-        const data = await Event.find({ promoterId: promoter._id });
+        const event = await Event.findOne({ token: eventToken });
 
-        if (!data) {
+        if (!event) {
             return res.status(404).json({ result: false, error: 'Event not found' });
         }
+        const fighter = await User.findOne({ token: fighterToken })
 
-        res.json({ result: true, data: data });
+        if (!fighter) {
+            return res.status(404).json({ result: false, error: 'Fighter not found' });
+        }
+
+        const reservation = event.fighters.find(r => r.fighterId.toString() === fighter._id.toString())
+        reservation.status = applicationStatus;
+        const data = await event.save();
+
+
+        res.json({ result: true, data });
     } catch (error) {
         res.status(500).json({ result: false, error: error.message });
     }
