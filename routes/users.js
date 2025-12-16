@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/users');
 const Fighter = require('../models/fighters');
 const Promoter = require('../models/promoters');
+const Event = require('../models/events');
 
 const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
@@ -272,6 +273,31 @@ router.get('/profile/:username', async (req, res) => {
   }
 
   return getUserByRole(user, res);
+});
+
+router.get('/applicants/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({ result: false, error: 'Missing token' });
+    }
+
+    const event = await Event.findOne({ token: token });
+    if (!event) {
+      return res.status(400).json({ result: false, error: 'Event not found' });
+    }
+
+    const applicants = [];
+    for (application of event.fighters) {
+      const fighter = await User.findById(application.fighterId);
+
+      applicants.push({ fighter: fighter, status: application.status, date: application.date });
+    }
+
+    res.json({ result: true, applicants: applicants });
+  } catch (e) {
+    return res.status(500).json({ result: false, error: e });
+  }
 });
 
 module.exports = router;
