@@ -289,12 +289,16 @@ router.get('/applicants/:token', async (req, res) => {
 
     const applicants = [];
     for (application of event.fighters) {
-      const fighter = await User.findById(application.fighterId);
+      const fighter = await Fighter.findOne({ userId: application.fighterId }).populate('userId');
 
-      applicants.push({ fighter: fighter, status: application.status, date: application.date });
+      applicants.push({
+        fighter: fighter,
+        status: application.status,
+        date: application.date,
+      });
     }
 
-    res.json({ result: true, applicants: applicants });
+    res.json({ result: true, data: applicants });
   } catch (e) {
     return res.status(500).json({ result: false, error: e });
   }
