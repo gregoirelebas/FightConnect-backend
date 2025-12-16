@@ -147,11 +147,19 @@ router.put('/join', async (req, res) => {
 
         const fighter = await User.findOne({ token: fighterToken })
 
+
         if (!fighter) {
             return res.status(404).json({ result: false, error: 'Fighter not found' });
         }
-        event.fighters.push({ fighterId: fighter._id, status: 'onHold', date: new Date() });
+
+        if (fighter.role === 'promoter') {
+             return res.status(404).json({ result: false, error: 'Fighter not found' });
+        }
+
+            event.fighters.push({ fighterId: fighter._id, status: 'onHold', date: new Date() });
         const data = await event.save();
+
+
 
         res.json({ result: true, data: data });
     } catch (error) {
@@ -179,5 +187,32 @@ router.get('/fighter/:token', async (req, res) => {
         res.status(500).json({ result: false, error: error.message });
     }
 });
+
+router.get('/reservation', async (req, res) => {
+    try {
+        const { fighterToken, eventToken } = req.params;
+
+        const event = await Event.findOne({ token: eventToken });
+        if (!event) {
+            return res.status(404).json({ result: false, error: 'Event not found' });
+        }
+
+        const fighter = await User.findOne({ token: fighterToken });
+        if (!fighter) {
+            return res.status(404).json({ result: false, error: 'Fighter not found' });
+        }
+
+        const reservation = event.fighters.find(r => r.fighterId.equals(fighter._id));
+        if (!reservation) {
+            return res.status(404).json({ result: false, error: 'Reservation not found' });
+        }
+
+        res.json({ result: true, reservation });
+    } catch (error) {
+        res.status(500).json({ result: false, error: error.message });
+    }
+});
+
+
 
 module.exports = router;
