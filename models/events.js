@@ -11,6 +11,7 @@ const eventSchema = mongoose.Schema({
   level: { type: String, enum: ['amateur', 'pro'] },
   sport: { type: String, enum: ['mma', 'englishBoxing', 'jjb', 'kickBoxing', 'muayThai'] },
   clubName: String,
+  city: String,
   date: Date,
   experience: {
     type: String,
