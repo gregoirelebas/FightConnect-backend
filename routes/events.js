@@ -76,7 +76,7 @@ router.get('/:token', async (req, res) => {
       return res.status(400).json({ result: false, error: 'Missing token' });
     }
 
-    const event = await Event.findOne({ token: token });
+    const event = await Event.findOne({ token: token }).populate('promoterId');
 
     if (!event) {
       return res.status(400).json({ result: false, error: 'No event found' });
