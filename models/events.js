@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const fighterReservation = mongoose.Schema({
   fighterId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
-  status: { type: [String], enum: ['accepted', 'denied', 'onHold'] },
+  status: { type: String, enum: ['accepted', 'denied', 'onHold'] },
   date: Date,
 });
 
