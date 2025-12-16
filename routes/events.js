@@ -111,26 +111,61 @@ router.get('/promoter/:token', async (req, res) => {
 
 router.put('/decision', async (req, res) => {
   try {
-    const { fighterToken, eventToken, applicationStatus } = req.body;
+    const { fighterToken, promoterToken, eventToken, decision } = req.body;
+
+    const check = checkBody(req.body, [
+      varToString(fighterToken),
+      varToString(promoterToken),
+      varToString(eventToken),
+      varToString(decision),
+    ]);
+
+    if (!check) {
+      return res
+        .status(400)
+        .json({ result: false, error: 'Missing fields: ' + check.missingFields });
+    }
+
+    const promoter = await User.findOne({ token: promoterToken });
+    if (!promoter) {
+      return res.status(400).json({ result: false, error: 'Promoter not found' });
+    }
 
     const event = await Event.findOne({ token: eventToken });
-
     if (!event) {
-      return res.status(404).json({ result: false, error: 'Event not found' });
+      return res.status(400).json({ result: false, error: 'Event not found' });
     }
-    const fighter = await User.findOne({ token: fighterToken });
 
+    if (event.promoterId.toString() !== promoter._id.toString()) {
+      return res
+        .status(400)
+        .json({ result: false, error: 'This promoter is not the manager of the event' });
+    }
+
+    const fighter = await User.findOne({ token: fighterToken });
     if (!fighter) {
-      return res.status(404).json({ result: false, error: 'Fighter not found' });
+      return res.status(400).json({ result: false, error: 'Fighter not found' });
     }
 
     const reservation = event.fighters.find(
       (r) => r.fighterId.toString() === fighter._id.toString()
     );
-    reservation.status = applicationStatus;
-    const data = await event.save();
 
-    res.json({ result: true, data });
+    if (!reservation) {
+      return res.status(400).json({ result: false, error: "Fighter hasn't joined the event" });
+    }
+
+    if (reservation.status !== 'onHold') {
+      return res.status(400).json({
+        result: false,
+        error: 'Application is not onHold => a decision has already been made',
+      });
+    }
+
+    reservation.status = decision ? 'accepted' : 'denied';
+    await event.save();
+
+    res.json({ result: true });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
   }
