@@ -11,62 +11,64 @@ const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
 
 router.post('/create', async (req, res) => {
-    const { level, sport, clubName, date, experience, weight, name, description, promoterToken } =
-        req.body;
+  const { level, sport, clubName, date, experience, weight, name, description, promoterToken } =
+    req.body;
 
-    const check = checkBody(req.body, [
-        varToString({ level }),
-        varToString({ sport }),
-        varToString({ clubName }),
-        varToString({ date }),
-        varToString({ experience }),
-        varToString({ weight }),
-        varToString({ name }),
-        varToString({ description }),
-        varToString({ promoterToken }),
-    ]);
+  const check = checkBody(req.body, [
+    varToString({ level }),
+    varToString({ sport }),
+    varToString({ clubName }),
+    varToString({ date }),
+    varToString({ experience }),
+    varToString({ weight }),
+    varToString({ name }),
+    varToString({ description }),
+    varToString({ promoterToken }),
+  ]);
 
-    if (!check.isValid) {
-        return res
-            .status(400)
-            .json({ result: false, error: 'Missing fields => ' + check.missingFields });
-    }
+  if (!check.isValid) {
+    return res
+      .status(400)
+      .json({ result: false, error: 'Missing fields => ' + check.missingFields });
+  }
 
-    const promoter = await User.findOne({ token: promoterToken });
-    if (!promoter) {
-        return res.status(400).json({ result: false, error: 'Promoter not found' });
-    }
+  const promoter = await User.findOne({ token: promoterToken });
+  if (!promoter) {
+    return res.status(400).json({ result: false, error: 'Promoter not found' });
+  }
 
-    const eventToken = uid2(32);
+  const eventToken = uid2(32);
 
-    const newEvent = new Event({
-        token: eventToken,
-        level: level,
-        sport: sport,
-        clubName: clubName,
-        date: new Date(date),
-        experience: experience,
-        weight: weight,
-        name: name,
-        description: description,
-        promoterId: promoter._id,
-        fighters: [],
-    });
+  const newEvent = new Event({
+    token: eventToken,
+    level: level,
+    sport: sport,
+    clubName: clubName,
+    date: new Date(date),
+    experience: experience,
+    weight: weight,
+    name: name,
+    description: description,
+    promoterId: promoter._id,
+    fighters: [],
+  });
 
-    await newEvent.save();
+  await newEvent.save();
 
-    res.json({ result: true, token: eventToken });
+  res.json({ result: true, token: eventToken });
 });
 
-router.get('/search', async (req, res) => {
-    try {
-        const data = await Event.find(req.query);
+router.get('/', async (req, res) => {
+  try {
+    const data = await Event.find();
 
-        res.json({ result: true, data: data });
-    } catch (error) {
-        res.status(500).json({ result: false, error: error.message });
-    }
+    res.json({ result: true, data: data });
+  } catch (error) {
+    res.status(500).json({ result: false, error: error.message });
+  }
 });
+
+
 
 router.get('/:token', async (req, res) => {
     try {
