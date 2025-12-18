@@ -11,12 +11,13 @@ const { checkBody } = require('../modules/checkBody');
 const { varToString } = require('../modules/varToString');
 
 router.post('/create', async (req, res) => {
-  const { level, sport, clubName, date, experience, weight, name, description, promoterToken } =
+  const { level, sport, city, clubName, date, experience, weight, name, description, promoterToken } =
     req.body;
 
   const check = checkBody(req.body, [
     varToString({ level }),
     varToString({ sport }),
+    varToString({ city }),
     varToString({ clubName }),
     varToString({ date }),
     varToString({ experience }),
@@ -42,6 +43,7 @@ router.post('/create', async (req, res) => {
   const newEvent = new Event({
     token: eventToken,
     level: level,
+    city: city,
     sport: sport,
     clubName: clubName,
     date: new Date(date),
