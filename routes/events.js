@@ -127,10 +127,10 @@ router.put('/decision', async (req, res) => {
     const { fighterToken, promoterToken, eventToken, decision } = req.body;
 
     const check = checkBody(req.body, [
-      varToString(fighterToken),
-      varToString(promoterToken),
-      varToString(eventToken),
-      varToString(decision),
+      varToString({ fighterToken }),
+      varToString({ promoterToken }),
+      varToString({ eventToken }),
+      varToString({ decision }),
     ]);
 
     if (!check) {
@@ -278,14 +278,18 @@ router.put('/cancel', async (req, res) => {
   try {
     const { promoterToken, eventToken } = req.body;
 
-    const check = checkBody(req.body, [varToString(promoterToken), varToString(eventToken)]);
+    const check = checkBody(req.body, [
+      varToString({ promoterToken }),
+      varToString({ eventToken }),
+    ]);
+
     if (!check.isValid) {
       return res
         .status(400)
         .json({ result: false, error: 'Missing fields => ' + check.missingFields });
     }
 
-    const event = await Event.find({ token: eventToken });
+    const event = await Event.findOne({ token: eventToken });
     if (!event) {
       return res.status(404).json({ result: false, error: 'Event not found' });
     }
