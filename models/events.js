@@ -25,6 +25,7 @@ const eventSchema = mongoose.Schema({
   description: String,
   promoterId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
   fighters: [fighterReservation],
+  isCancelled: Boolean,
 });
 
 const Event = mongoose.model('events', eventSchema);
