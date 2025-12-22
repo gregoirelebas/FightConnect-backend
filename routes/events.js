@@ -75,15 +75,14 @@ router.get('/', async (req, res) => {
   try {
     const allEvent = await Event.find();
 
-    const nowDate = Date.now()
-    console.log(nowDate)
+    const nowDate = Date.now();
 
     const data = allEvent.filter((event) => {
       let eventDate = new Date(event.date).getTime();
-    return  eventDate >= nowDate })
+      return eventDate >= nowDate && !event.isCancelled;
+    });
 
     res.json({ result: true, data: data });
-
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
   }
